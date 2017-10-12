@@ -2,30 +2,21 @@
  * Created by aaron on 2017/3/22.
  */
 
-import {observable, computed} from 'mobx';
+import {observable, computed, action, autorun} from 'mobx';
 import update from 'immutability-helper';
 import config from './config';
 import Group from './groups';
 import {uniqueArr} from './utils';
 
 
-//正在下坠的
-let activeGroup = {};
-//下一轮出场
-let nextGroup = [];
+let activeGroup = {}, //正在下坠的
+    nextGroup = [];//下一轮出场
 
-//进行中？
-let isIng = true;
+let readyList = [];//就绪的方块组
 
-
-//本轮得分
-let roundScroe = 0;
-
-//定时器
-let timer = 0;
-
-//当前轮数
-let roundCount = 0;
+let speed = config.SPEED, //下落速度
+    scroe = 0,//得分
+    timers = [];//定时器
 
 /**
  * 整个tetris的数据模型
@@ -34,11 +25,15 @@ let roundCount = 0;
 let store = observable({
     actives: [],//活动中的
     predicts: [],//预估终点
-    nexts: [],//下一个方块组
-    score: 0,//得分
-    hscore: 0,//历史最高分
     stables: [],//稳定的方块组
+    totalScore: 0,//总得分
+    hstScore: 0,//历史最高分
+    readyGroup: {},
 
+    isIng: true,//是否进行中
+    roundCount: 0,//当前回合计数
+
+    //当前状态
     get table() {
         let pureTable = createPureTable();
         //将所有实心g填入pureTable
@@ -47,7 +42,21 @@ let store = observable({
         });
         return pureTable;
     }
+
 });
+
+autorun(() => {
+    //当状态发生变化,自动开始或停止计时器
+    console.log('isIng:', store.isIng);
+    if (store.isIng) {
+        //开始一个计时器
+        timers.push(doSetInterval(tick, speed));
+    } else {
+        //停止所有计时器
+        timers.forEach(t => clearInterval(t))
+    }
+});
+
 
 /**
  * 创建一个对象，它是所有的g的表示。。
@@ -65,25 +74,28 @@ function createPureTable() {
 
 
 /**
- * 开始
+ * 重新开始
  */
-function init() {
-    newRound();
+function gameRestart() {
+    store.currentRoundCount = 0;//总轮数清零
+    store.totalScore = 0;//总得分清零
+
+    newRound();//新一轮
 }
 
 /**
  * 移动group
  * @param dir 方向
  * @param step 步数
- * @param isTick 是否为常规下落
+ * @param fromTick 是否为常规下落
  */
-function moveStep(dir = 'y', step = 1, isTick = false) {
+function moveStep(dir = 'y', step = 1, fromTick = false) {
     //console.log(dir);
-    if (!isIng) return;
+    if (!store.isIng) return;
 
     if (dir === 'y') {
-        let gap = getEndGroupGap(activeGroup) - 1;
-        if (gap === 0 && isTick) {
+        let gap = getEndGroupGap(activeGroup);
+        if (gap === 0 && fromTick) {
             //结束
             //本轮结束
             completeRound();
@@ -105,7 +117,6 @@ function moveStep(dir = 'y', step = 1, isTick = false) {
         //当发生重叠将被修正。
         activeGroup = correction(activeGroup);
     }
-
 }
 
 /**
@@ -146,24 +157,24 @@ function correction(group, origin = 0) {
             if (g < 2) {
                 //这里的2是因为16个方块，从小于第2列开始是左方，以此类推
                 //左边重叠,将右移
-                console.log('左边有毛病');
+                console.log('修复左边');
                 group.x += 1;
             }
             if (g > 1) {
                 //右边重叠，将左移
-                console.log('右边有毛病');
+                console.log('修复右边');
                 group.x -= 1;
             }
         } else {
             if (g < 2 && origin === 1) {
                 //这里的2是因为16个方块，从小于第2列开始是左方，以此类推
                 //左边重叠,将右移
-                console.log('左边有毛病');
+                console.log('修复左边');
                 group.x += 1;
             }
             if (g > 1 && origin === 2) {
                 //右边重叠，将左移
-                console.log('右边有毛病');
+                console.log('修复左边');
                 group.x -= 1;
             }
         }
@@ -236,7 +247,7 @@ function getEndGroupGap(group) {
             }
         })
     });
-    return minGap;//去除重复后
+    return minGap - 1;//去除重复后
 }
 
 
@@ -263,22 +274,24 @@ function groupToArray(group) {
  * 结束本轮
  */
 function completeRound() {
-    //console.log('本轮结束');
-    roundCount += 1;
-    //将活动group添加到stable
-    let newStables = store.stables.concat(store.actives);
 
-    //消去一行或多行
-    store.stables = cleanAndDecline(newStables);
+    //本轮结束，暂停tick。
+    store.isIng = false;
+
+    //消去行后的稳定组
+    store.stables = cleanAndDecline(store.stables.concat(store.actives));
+    //清空活动组
     store.actives = [];
     //
-    clearInterval(timer);
 
     stableFull() ? gameOver() : newRound();
     //
 }
 /**
- * 就消除掉填满的行
+ * 消除掉填满的行
+ * @param arr
+ * @param onCleanEveryLine
+ * @returns {*[]|*}
  */
 function cleanAndDecline(arr, onCleanEveryLine) {
     arr = uniqueArr(arr);
@@ -329,8 +342,7 @@ function cleanAndDecline(arr, onCleanEveryLine) {
  */
 function gameOver() {
     console.log('game over !');
-    alert('game over!');
-    isIng = false;
+    store.isIng = false;
     clearInterval(timer);
 }
 
@@ -339,7 +351,7 @@ function gameOver() {
  * 暂停游戏
  */
 function gamePause() {
-    isIng = false;
+    store.isIng = false;
     clearInterval(timer);
 }
 
@@ -347,13 +359,7 @@ function gamePause() {
  * 继续游戏
  */
 function gameContinue() {
-    if (isIng) {
-        return;
-    }
-    isIng = true;//
-    clearInterval(timer);
-    //timer = setInterval(tick, speed);
-    timer = doSetInterval(tick, speed);
+    store.isIng = false;
 }
 
 
@@ -366,14 +372,6 @@ function gameContinue() {
 function doSetInterval(handle, delay) {
     handle();
     return setInterval(handle, delay);
-}
-
-
-/**
- * 重新开始
- */
-function gameReplay() {
-    location.reload();
 }
 
 
@@ -394,17 +392,17 @@ function stableFull() {
  * 开始新一轮
  */
 function newRound() {
-    //nexts.shift();//新一轮的时候，移除前面一个
-    //while (nexts.length < 2) {
-    //    nexts.push(createNewGroup());
-    //}
-    //actives = nexts[0];//将备选的第一个开始载入,//重置计时器
-    //store.nextActive = groupToArray(nexts[1]);
-    ////console.log(actives);
-    //clearInterval(timer);
-    //speed = speed - speedA;
-    ////timer = setInterval(tick, speed);
-    //timer = doSetInterval(tick, speed);
+    store.currentRoundCount += 1;
+    while (readyList.length < 2) {
+        readyList.push(new Group());
+    }
+    activeGroup = readyList.shift();//新一轮的时候，取前面一个
+    store.readyGroup = readyList[0];//下一轮的组
+
+    speed = speed - config.SPEED_A;
+
+    store.isIng = true;//进行中
+    return;
 }
 
 /**
@@ -450,10 +448,9 @@ function rotateState(state) {
 
 
 export {
-    store as tetrisStore,
-    init,
+    store,
+    gameRestart,
     moveStep,
     gamePause,
-    gameContinue,
-    gameReplay
+    gameContinue
 };
