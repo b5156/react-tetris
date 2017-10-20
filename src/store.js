@@ -374,7 +374,6 @@ function doSetInterval(handle, delay) {
     return setInterval(handle, delay);
 }
 
-
 /**
  * 检查游戏是否结束
  * @returns {boolean}
