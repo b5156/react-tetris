@@ -1,36 +1,72 @@
+*{ margin: 0; padding: 0; box-sizing: border-box; }
 
-body{
-    font-size: 0.28rem;
-}
+body{ font-size: 14px; color: #333333; }
 
-*{
-    box-sizing: border-box;
-}
+.test{ outline: solid 1px red; }
 
-.test{
-    outline: solid 1px red;
-}
+.fs-18px{ font-size: 18px; }
 
-.p-10px{
-    padding: 0.1rem;
-}
-
-.board{
-    height: 1.5rem;
-}
-
-.g{
-    display:    inline-block;
-    width:      0.5rem;
-    height:     0.5rem;
-    overflow:   hidden;
-    outline:    solid 1px green;
-    font-size:  0.24rem;
-    background: greenyellow;
+.app{
+    display: flex;
+    padding: 10px;
 }
 
 .stage{
-    display:         flex;
-    justify-content: center;
-    align-items:     center;
+    width:      228px;
+    padding:    4px;
+    display:    flex;
+    background: #e8e8e8;
+}
+
+.divide{
+    display:       block;
+    border-bottom: solid 1px #dddddd;
+    height:        0;
+    margin:        10px 0;
+}
+
+.bar{
+    padding:           10px;
+    flex:              auto;
+    background:        #ffffff;
+    border:            solid 6px #e8e8e8;
+    border-left-width: 0;
+}
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table; }
+
+.clearfix:after {
+    clear: both; }
+.g0{
+    margin:     1px;
+    background: #ddd;
+    width:      20px;
+    height:     20px;
+    display:    block;
+    float: left;
+}
+
+.g1{
+    float: left;
+    margin:     1px;
+    background: orange;
+    width:      20px;
+    height:     20px;
+    display:    block;
+}
+
+.btn{
+    display:       block;
+    padding:       10px;
+    color:         #ffffff;
+    border-radius: 4px;
+    outline:       none;
+    background:    orange;
+    border:        solid 1px #dddddd;
+}
+
+.btn:active{
+    background: #e58100;
 }

@@ -78,7 +78,9 @@ export function allModelNames() {
 export default class Group {
     constructor(name) {
         //位置信息
-        this.loc = {x: 3, y: 0};
+        //this.loc = {x: 3, y: 0};
+        this.x = 3;
+        this.y = 0;
         //显示状态
         if (name && allModelNames().indexOf(name) >= 0) {
             //指定的
@@ -86,7 +88,8 @@ export default class Group {
             this.name = name;
         } else {
             //随机的
-            let m = MODELS[Math.floor(MODELS.length * Math.random())].state;
+            let m = MODELS[Math.floor(MODELS.length * Math.random())];
+            console.log(m);
             this.state = m.state;
             this.name = m.name;
         }

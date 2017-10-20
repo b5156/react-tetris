@@ -93,8 +93,11 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
     //console.log(dir);
     if (!store.isIng) return;
 
+
     if (dir === 'y') {
+
         let gap = getEndGroupGap(activeGroup);
+
         if (gap === 0 && fromTick) {
             //结束
             //本轮结束
@@ -117,6 +120,8 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
         //当发生重叠将被修正。
         activeGroup = correction(activeGroup);
     }
+
+    store.actives = groupToArray(activeGroup);
 }
 
 /**
@@ -343,7 +348,7 @@ function cleanAndDecline(arr, onCleanEveryLine) {
 function gameOver() {
     console.log('game over !');
     store.isIng = false;
-    clearInterval(timer);
+    //clearInterval(timer);
 }
 
 
@@ -352,7 +357,7 @@ function gameOver() {
  */
 function gamePause() {
     store.isIng = false;
-    clearInterval(timer);
+    //clearInterval(timer);
 }
 
 /**
@@ -397,11 +402,9 @@ function newRound() {
     }
     activeGroup = readyList.shift();//新一轮的时候，取前面一个
     store.readyGroup = readyList[0];//下一轮的组
-
+    console.log(activeGroup);
     speed = speed - config.SPEED_A;
-
     store.isIng = true;//进行中
-    return;
 }
 
 /**
@@ -451,5 +454,6 @@ export {
     gameRestart,
     moveStep,
     gamePause,
-    gameContinue
+    gameContinue,
+    table2array
 };
