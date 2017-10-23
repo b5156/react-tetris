@@ -7,39 +7,40 @@ import React from 'react';
 import ReactDom from 'react-dom';
 import Hammer from 'hammerjs';
 import {observer} from 'mobx-react';
-import {store, table2array, gameRestart, moveStep} from './store';
+import {store, table2array, gameRestart, gamePause, moveStep} from './store';
 import config from './config';
 
 @observer
 class App extends React.Component {
     render = () =>
         <div className="app">
-            <div className="stage">
+            <div className="bar">
+                <div>next:</div>
+                <div className="clearfix">{store.readyGroupDOM}</div>
+                <i className="divide"/>
+                <div>score:</div>
+                <div className="fs-18px">{store.totalScore}</div>
+                <br/>
+                <div>best:</div>
+                <div>{store.hstScore}</div>
+                <i className="divide"/>
+                <div>
+                    <button className="btn" onClick={gamePause} type="button">PAUSE</button>
+                </div>
+                <br/>
+                <div>
+                    <button className="btn" onClick={gameRestart} type="button">RESTART</button>
+                </div>
+            </div>
+
+            <div id="stage">
                 {table2array(this.props.store.table).map((row, ir) =>
-                    <div key={ir}>{
+                    <div className="clearfix" key={ir}>{
                         row.map((col, ic) =>
-                            <div key={ic} className={`clearfix col ${col ? 'g1' : 'g0'}`}/>
+                            <div key={ic} className={`${col ? 'g1' : 'g0'}`}/>
                         )}
                     </div>
                 )}
-            </div>
-            <div className="bar">
-                <div>next:</div>
-                <div><img src=""/></div>
-                <i className="divide"/>
-                <div>score:</div>
-                <div className="fs-18px">256</div>
-                <br/>
-                <div>best:</div>
-                <div>554</div>
-                <i className="divide"/>
-                <div>
-                    <button className="btn" type="button">PAUSE</button>
-                </div>
-                <br/>
-                <div>
-                    <button className="btn" type="button">RESTART</button>
-                </div>
             </div>
         </div>;
 
@@ -53,7 +54,7 @@ class App extends React.Component {
     addHammer() {
         let t = this;
         let relaxTime = 0;
-        let mc = new Hammer(document.getElementById('root'));
+        let mc = new Hammer(document.getElementById('stage'));
         mc.get('pan').set({direction: Hammer.DIRECTION_ALL});
         mc.on("tap panleft panright pandown", e => {
             //console.log('惯性:', e.deltaY < -100);
@@ -78,7 +79,7 @@ class App extends React.Component {
         mc.on('swipeup', (e) => {
             //console.log(e);
             //坠落到底
-            moveStep('y', 1, true, true);
+            moveStep('y', config.ROW, true, true);
         })
     }
 }

@@ -1,6 +1,7 @@
 /**
  * Created by aaron on 2017/3/20.
  */
+
 const MODELS = [
     {
         name: 'J',
@@ -80,16 +81,17 @@ export default class Group {
         //位置信息
         //this.loc = {x: 3, y: 0};
         this.x = 3;
-        this.y = 0;
+        this.y = -3;
         //显示状态
         if (name && allModelNames().indexOf(name) >= 0) {
             //指定的
-            this.state = MODELS.find(n => n === name).state;
+
+            this.state = MODELS.find(n => n.name === name).state;
             this.name = name;
         } else {
             //随机的
             let m = MODELS[Math.floor(MODELS.length * Math.random())];
-            console.log(m);
+            //console.log(m);
             this.state = m.state;
             this.name = m.name;
         }

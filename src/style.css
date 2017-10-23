@@ -11,7 +11,7 @@ body{ font-size: 14px; color: #333333; }
     padding: 10px;
 }
 
-.stage{
+#stage{
     width:      228px;
     padding:    4px;
     display:    flex;
@@ -29,8 +29,8 @@ body{ font-size: 14px; color: #333333; }
     padding:           10px;
     flex:              auto;
     background:        #ffffff;
-    border:            solid 6px #e8e8e8;
-    border-left-width: 0;
+    border:            solid 4px #e8e8e8;
+    border-right-width: 0;
 }
 .clearfix:before,
 .clearfix:after {
@@ -51,7 +51,7 @@ body{ font-size: 14px; color: #333333; }
 .g1{
     float: left;
     margin:     1px;
-    background: orange;
+    background: #ff9016;
     width:      20px;
     height:     20px;
     display:    block;
@@ -63,10 +63,10 @@ body{ font-size: 14px; color: #333333; }
     color:         #ffffff;
     border-radius: 4px;
     outline:       none;
-    background:    orange;
+    background:    #ff9016;
     border:        solid 1px #dddddd;
 }
 
 .btn:active{
-    background: #e58100;
+    background: #ff8600;
 }

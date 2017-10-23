@@ -2,20 +2,22 @@
  * Created by aaron on 2017/3/22.
  */
 
-import {observable, computed, action, autorun} from 'mobx';
+import mobx, {observable, computed, action, autorun} from 'mobx';
+import React from 'react';
+//import * as mobx from 'mobx'
 import update from 'immutability-helper';
 import config from './config';
 import Group from './groups';
 import {uniqueArr} from './utils';
+import ls from 'store';
 
 
-let activeGroup = {}, //正在下坠的
-    nextGroup = [];//下一轮出场
+let activeGroup = {}; //正在下坠的
 
 let readyList = [];//就绪的方块组
 
 let speed = config.SPEED, //下落速度
-    scroe = 0,//得分
+    scroe = 0,//本轮得分
     timers = [];//定时器
 
 /**
@@ -27,11 +29,33 @@ let store = observable({
     predicts: [],//预估终点
     stables: [],//稳定的方块组
     totalScore: 0,//总得分
-    hstScore: 0,//历史最高分
+    currentRoundCount: 0,
     readyGroup: {},
 
     isIng: true,//是否进行中
     roundCount: 0,//当前回合计数
+
+    //历史最高分
+    get hstScore() {
+        let best = ls.get('best') || 0;
+        if (this.totalScore > best) {
+            ls.set('best', this.totalScore);
+            return this.totalScore;
+        } else {
+            return best;
+        }
+    },
+
+    get readyGroupDOM() {
+        //这里有一bug，本该直接使用state的。
+        let arr = table2array(rotateState(this.readyGroup.state)).reverse();
+        return arr.map((row, ir) =>
+            <div className="clearfix right" key={ir}>{
+                row.map((col, ic) =>
+                    <div key={ic} className={`${col ? 'g1' : 'g0'}`}/>
+                )}
+            </div>);
+    },
 
     //当前状态
     get table() {
@@ -79,6 +103,7 @@ function createPureTable() {
 function gameRestart() {
     store.currentRoundCount = 0;//总轮数清零
     store.totalScore = 0;//总得分清零
+    store.stables = [];
 
     newRound();//新一轮
 }
@@ -112,13 +137,13 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
 
     } else if (dir === 'x') {
         activeGroup = update(activeGroup, {x: {$apply: v => v + step}});
-        //当发生重叠将被修正。
-        activeGroup = correction(activeGroup, step > 0 ? 'r' : 'l');
+        //修正一次
+        activeGroup = correction(activeGroup, step > 0 ? 2 : 1);
     } else if (dir === 'o') {
         //旋转一次
         activeGroup = update(activeGroup, {state: {$apply: rotateState}});
-        //当发生重叠将被修正。
-        activeGroup = correction(activeGroup);
+        //修正一次
+        activeGroup = correction(activeGroup, 0);
     }
 
     store.actives = groupToArray(activeGroup);
@@ -138,11 +163,12 @@ function correction(group, origin = 0) {
     let cArr = [];//重叠的g
 
     //找出重叠的g,这里有优化的空间,可剪短sArr的长度
-    for (let key in group.state) {
+    Object.keys(group.state).forEach(key => {
         let realKey = parseKey(key, {x: group.x, y: group.y}).key;
         if (group.state[key] === 1) {
             if (parseKey(realKey).x < 0 || parseKey(realKey).x > config.COL - 1) {
                 //超出左右
+                //console.log('超出左右');
                 cArr.push(parseKey(key).x);
             }
             sArr.forEach(sg => {
@@ -152,34 +178,40 @@ function correction(group, origin = 0) {
                 }
             })
         }
-    }
-
+    });
 
     //修正到合适位置, 只有左、右需要修正，上下不需要.
-    uniqueArr(cArr).forEach(g => {
+    uniqueArr(cArr).forEach(x => {
 
         if (origin === 0) {
-            if (g < 2) {
+            //旋转后修复
+
+            if (x < 2) {
                 //这里的2是因为16个方块，从小于第2列开始是左方，以此类推
                 //左边重叠,将右移
                 console.log('修复左边');
                 group.x += 1;
             }
-            if (g > 1) {
+            if (x > 1) {
                 //右边重叠，将左移
                 console.log('修复右边');
                 group.x -= 1;
             }
-        } else {
-            if (g < 2 && origin === 1) {
+        } else if (origin === 1) {
+
+            //左右移动后修复
+            if (x <= 2) {
                 //这里的2是因为16个方块，从小于第2列开始是左方，以此类推
                 //左边重叠,将右移
                 console.log('修复左边');
                 group.x += 1;
             }
-            if (g > 1 && origin === 2) {
-                //右边重叠，将左移
-                console.log('修复左边');
+
+        } else if (origin === 2) {
+
+            if (x >= 1) {
+                //右边重叠，将左移，I类型从1列开始
+                console.log('修复右边');
                 group.x -= 1;
             }
         }
@@ -188,35 +220,7 @@ function correction(group, origin = 0) {
     return group;
 }
 
-/**
- * 检查是否有方块重叠或超出边界：
- * 1，当发生重叠，将返回false，反之则返回新的group对象
- * 2，当发超出边界，将返回false，反之则返回新的group对象
- * @param group
- * @returns
 
-    function isViable(group) {
-
-    //yong getEndGroupGap
-    let arr = groupToArray(group);
-    //如果方块有超出边界或方块重叠，将返回false
-    for (let i = 0; i < arr.length; i++) {
-        let loc = parseKey(arr[i]);
-        if (loc.x < 0 || loc.x > config.COL - 1 || loc.y > config.ROW - 1) {
-            //console.log('将超出边界!驳回！');
-            return false;
-        }
-        for (let s = 0; s < store.stables.length; s++) {
-            if (arr[i] === store.stables[s]) {
-                //console.log('将重叠!驳回！', arr[i]);
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
- */
 /**
  * 将key转换成坐标
  * @param key
@@ -285,12 +289,14 @@ function completeRound() {
 
     //消去行后的稳定组
     store.stables = cleanAndDecline(store.stables.concat(store.actives));
-    //清空活动组
-    store.actives = [];
-    //
 
-    stableFull() ? gameOver() : newRound();
-    //
+    if (mobx.toJS(store.actives).some(item => parseKey(item).y <= 0)) {
+        console.log('触顶');
+        gameOver();
+    } else {
+        console.log('新一轮');
+        newRound();
+    }
 }
 /**
  * 消除掉填满的行
@@ -317,8 +323,8 @@ function cleanAndDecline(arr, onCleanEveryLine) {
         }
     }
 
-    //roundScroe = Math.pow(config.EACH_S, full.length);
-    //store.score += roundScroe;
+    scroe = Math.pow(config.EACH_S, fulls.length);
+    store.totalScore += scroe;
     //console.log(roundScroe);
 
 
@@ -356,15 +362,8 @@ function gameOver() {
  * 暂停游戏
  */
 function gamePause() {
-    store.isIng = false;
+    store.isIng = !store.isIng;
     //clearInterval(timer);
-}
-
-/**
- * 继续游戏
- */
-function gameContinue() {
-    store.isIng = false;
 }
 
 
@@ -379,30 +378,19 @@ function doSetInterval(handle, delay) {
     return setInterval(handle, delay);
 }
 
-/**
- * 检查游戏是否结束
- * @returns {boolean}
- */
-function stableFull() {
-    for (let key in store.stables) {
-        if (parseKey(store.stables[key]).y === 0) {
-            return true;
-        }
-    }
-    return false;
-}
 
 /**
  * 开始新一轮
  */
 function newRound() {
+    store.actives = [];
     store.currentRoundCount += 1;
     while (readyList.length < 2) {
         readyList.push(new Group());
     }
+    //console.log(readyList.concat());
     activeGroup = readyList.shift();//新一轮的时候，取前面一个
-    store.readyGroup = readyList[0];//下一轮的组
-    console.log(activeGroup);
+    store.readyGroup = activeGroup;//readyList[0];//下一轮的组
     speed = speed - config.SPEED_A;
     store.isIng = true;//进行中
 }
@@ -420,6 +408,7 @@ function tick(e) {
  */
 function table2array(table) {
     let arr = [];
+
     for (let k in table) {
         let ks = k.split('*');
         if (arr[ks[0]] === undefined) arr[ks[0]] = [];
@@ -454,6 +443,5 @@ export {
     gameRestart,
     moveStep,
     gamePause,
-    gameContinue,
-    table2array
+    table2array,
 };
