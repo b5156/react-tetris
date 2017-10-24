@@ -12,8 +12,8 @@ import {uniqueArr} from './utils';
 import ls from 'store';
 
 
-let activeGroup = {}; //正在下坠的
-
+let activeGroup = {}; //正在下坠
+let predictGroup = {};//预估终点
 let readyList = [];//就绪的方块组
 
 let speed = config.SPEED, //下落速度
@@ -52,7 +52,7 @@ let store = observable({
         return arr.map((row, ir) =>
             <div className="clearfix right" key={ir}>{
                 row.map((col, ic) =>
-                    <div key={ic} className={`${col ? 'g1' : 'g0'}`}/>
+                    <div key={ic} className={`g bg-${col}`}/>
                 )}
             </div>);
     },
@@ -61,26 +61,34 @@ let store = observable({
     get table() {
         let pureTable = createPureTable();
         //将所有实心g填入pureTable
-        this.actives.concat(this.stables).concat(this.predicts).forEach(key => {
-            pureTable[key] = 1;
+        //console.log(mobx.toJS(this.predicts),55);
+
+        let arr = mobx.toJS(this.actives).concat(mobx.toJS(this.stables));
+        arr.forEach(g => {
+            pureTable[g] = 1;
         });
+        //mobx.toJS(this.predicts).forEach(g => {
+        //    pureTable[g] = 2;
+        //});
+        //mobx.toJS(this.stables)
+        //this.actives.concat(this.stables).concat(this.predicts).forEach(key => {
+        //    pureTable[key] = 1;
+        //});
         return pureTable;
     }
 
 });
-
 autorun(() => {
     //当状态发生变化,自动开始或停止计时器
-    console.log('isIng:', store.isIng);
+    //console.log('isIng:', store.isIng);
     if (store.isIng) {
         //开始一个计时器
-        timers.push(doSetInterval(tick, speed));
+        timers.push(setInterval(tick, speed));
     } else {
         //停止所有计时器
         timers.forEach(t => clearInterval(t))
     }
 });
-
 
 /**
  * 创建一个对象，它是所有的g的表示。。
@@ -118,10 +126,10 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
     //console.log(dir);
     if (!store.isIng) return;
 
+    let gap = getEndGroupGap(activeGroup);
+
 
     if (dir === 'y') {
-
-        let gap = getEndGroupGap(activeGroup);
 
         if (gap === 0 && fromTick) {
             //结束
@@ -135,7 +143,8 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
             activeGroup = update(activeGroup, {y: {$apply: v => v + step}});
         }
 
-    } else if (dir === 'x') {
+    }
+    else if (dir === 'x') {
         activeGroup = update(activeGroup, {x: {$apply: v => v + step}});
         //修正一次
         activeGroup = correction(activeGroup, step > 0 ? 2 : 1);
@@ -147,6 +156,15 @@ function moveStep(dir = 'y', step = 1, fromTick = false) {
     }
 
     store.actives = groupToArray(activeGroup);
+
+    //predictGroup = Object.assign({}, activeGroup);
+    //predictGroup.y = activeGroup.y + gap;
+    //for (let k in predictGroup.state) {
+    //    if (predictGroup.state[k] === 1) {
+    //        predictGroup.state[k] = 2;
+    //    }
+    //}
+    //store.predicts = groupToArray(predictGroup)
 }
 
 /**
@@ -353,6 +371,7 @@ function cleanAndDecline(arr, onCleanEveryLine) {
  */
 function gameOver() {
     console.log('game over !');
+    alert('game over!')
     store.isIng = false;
     //clearInterval(timer);
 }
@@ -368,18 +387,6 @@ function gamePause() {
 
 
 /**
- * 因为setInterval会延迟一个delay，所以这里是需要立即执行一次。
- * @param handle
- * @param delay
- * @returns {number}
- */
-function doSetInterval(handle, delay) {
-    handle();
-    return setInterval(handle, delay);
-}
-
-
-/**
  * 开始新一轮
  */
 function newRound() {
@@ -390,7 +397,7 @@ function newRound() {
     }
     //console.log(readyList.concat());
     activeGroup = readyList.shift();//新一轮的时候，取前面一个
-    store.readyGroup = activeGroup;//readyList[0];//下一轮的组
+    store.readyGroup = readyList[0];//下一轮的组
     speed = speed - config.SPEED_A;
     store.isIng = true;//进行中
 }

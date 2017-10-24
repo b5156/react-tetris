@@ -37,7 +37,7 @@ class App extends React.Component {
                 {table2array(this.props.store.table).map((row, ir) =>
                     <div className="clearfix" key={ir}>{
                         row.map((col, ic) =>
-                            <div key={ic} className={`${col ? 'g1' : 'g0'}`}/>
+                            <div key={ic} className={`g bg-${col}`}/>
                         )}
                     </div>
                 )}

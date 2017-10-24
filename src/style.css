@@ -26,36 +26,36 @@ body{ font-size: 14px; color: #333333; }
 }
 
 .bar{
-    padding:           10px;
-    flex:              auto;
-    background:        #ffffff;
-    border:            solid 4px #e8e8e8;
+    padding:            10px;
+    flex:               auto;
+    background:         #ffffff;
+    border:             solid 4px #e8e8e8;
     border-right-width: 0;
 }
+
 .clearfix:before,
-.clearfix:after {
+.clearfix:after{
     content: " ";
     display: table; }
 
-.clearfix:after {
+.clearfix:after{
     clear: both; }
-.g0{
-    margin:     1px;
-    background: #ddd;
-    width:      20px;
-    height:     20px;
-    display:    block;
-    float: left;
+
+.g{
+    margin:  1px;
+    float:   left;
+    width:   20px;
+    height:  20px;
+    display: block;
 }
 
-.g1{
-    float: left;
-    margin:     1px;
-    background: #ff9016;
-    width:      20px;
-    height:     20px;
-    display:    block;
-}
+.bg-0{ background: #dddddd; }
+
+.bg-1{ background: #ff9016; }
+
+.bg-2{ background: #ffd19e; }
+
+.bg-3{ background: #ffffff; }
 
 .btn{
     display:       block;
