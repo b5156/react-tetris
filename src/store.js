@@ -112,6 +112,7 @@ function gameRestart() {
     store.currentRoundCount = 0;//总轮数清零
     store.totalScore = 0;//总得分清零
     store.stables = [];
+    speed = config.SPEED;
 
     newRound();//新一轮
 }
