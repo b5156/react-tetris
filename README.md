@@ -5,4 +5,4 @@
 
 ![二维码](http://140.143.21.85:1987/example-tetris/qrcode.png)
 
-[https://www.b5156.net/statics/tetris/tetris.html](http://140.143.21.85:1987/example-tetris/index.html)
+[在线试玩](http://140.143.21.85:1987/example-tetris/index.html)
