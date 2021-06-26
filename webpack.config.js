@@ -29,11 +29,11 @@ module.exports = {
     },
     //入口js文件
     entry: './index',
-    plugins: [new HtmlWebpackPlugin({template: './index.html', filename: 'tetris.html'})].concat(
+    plugins: [new HtmlWebpackPlugin({template: './index.html', filename: 'index.html'})].concat(
         isDev
             ? [ //开启多屏幕调试
             new BrowserSyncPlugin(
-                {server: {baseDir: "dev", index: "tetris.html"}},
+                {server: {baseDir: "dev", index: "index.html"}},
                 {reload: true}
             )]
 
