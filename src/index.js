@@ -76,7 +76,7 @@ class App extends React.Component {
             relaxTime = e.timeStamp;
         });
         mc.get('swipe').set({direction: Hammer.DIRECTION_VERTICAL});
-        mc.on('swipeup', (e) => {
+        mc.on('swipedown', (e) => {
             //console.log(e);
             //坠落到底
             moveStep('y', config.ROW, true, true);
